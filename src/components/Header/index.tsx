@@ -3,7 +3,7 @@ import ptBR from 'date-fns/locale/pt-BR';
 
 import styles from './styles.module.scss';
 
-export default function Header() {
+export default function Header(): JSX.Element {
   const currentDate = format(new Date(), 'EEEEEE, d MMM', { locale: ptBR });
 
   return (

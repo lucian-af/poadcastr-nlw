@@ -1,14 +1,11 @@
-// SPA - Single Page Application
-// SSR - Server Side Rendering
-// SSG - Static Site Generation
 import { format, parseISO } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { GetStaticProps } from 'next';
+import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useContext } from 'react';
 
-import { PlayerContext } from '../../contexts/playerContext';
+import { usePlayer } from '../contexts/playerContext';
 import { api } from '../services/api';
 import { convertDurationToTimeString } from './../utils/convertDurationToTimeString';
 import styles from './home.module.scss';
@@ -29,19 +26,29 @@ type HomeProps = {
   allEpisodes: Episode[];
 };
 
-export default function Home({ latestEpisodes, allEpisodes }: HomeProps) {
-  const { play } = useContext(PlayerContext);
+export default function Home({ latestEpisodes, allEpisodes }: HomeProps): JSX.Element {
+  const { play, playList } = usePlayer();
+  const episodeList = [...latestEpisodes, ...allEpisodes];
 
   return (
     <div className={styles.homepage}>
+      <Head>
+        <title>Home | Podcastr</title>
+      </Head>
       <section className={styles.latestEpisodes}>
         <h2>Últimos lançamentos</h2>
 
         <ul>
-          {latestEpisodes.map((episode) => {
+          {latestEpisodes.map((episode, index) => {
             return (
               <li key={episode.id}>
-                <Image width={192} height={192} src={episode.thumbnail} alt={episode.thumbnail} objectFit="cover" />
+                <Image
+                  width={192}
+                  height={192}
+                  src={episode.thumbnail}
+                  alt={episode.thumbnail}
+                  objectFit="cover"
+                />
 
                 <div className={styles.episodeDetails}>
                   <Link href={`/episodes/${episode.id}`}>
@@ -52,7 +59,7 @@ export default function Home({ latestEpisodes, allEpisodes }: HomeProps) {
                   <span>{episode.durationAsString}</span>
                 </div>
 
-                <button type="button" onClick={() => play(episode)}>
+                <button type="button" onClick={() => playList(episodeList, index)}>
                   <img src="/play-green.svg" alt="Tocar Episódio" />
                 </button>
               </li>
@@ -76,11 +83,17 @@ export default function Home({ latestEpisodes, allEpisodes }: HomeProps) {
             </tr>
           </thead>
           <tbody>
-            {allEpisodes.map((episode) => {
+            {allEpisodes.map((episode, index) => {
               return (
                 <tr key={episode.id}>
                   <td style={{ width: 72 }}>
-                    <Image width={120} height={120} src={episode.thumbnail} alt={episode.title} objectFit="cover" />
+                    <Image
+                      width={120}
+                      height={120}
+                      src={episode.thumbnail}
+                      alt={episode.title}
+                      objectFit="cover"
+                    />
                   </td>
                   <td>
                     <Link href={`/episodes/${episode.id}`}>
@@ -91,7 +104,10 @@ export default function Home({ latestEpisodes, allEpisodes }: HomeProps) {
                   <td style={{ width: 100 }}>{episode.publishedAt}</td>
                   <td>{episode.durationAsString}</td>
                   <td>
-                    <button type="button" onClick={() => play(episode)}>
+                    <button
+                      type="button"
+                      onClick={() => playList(episodeList, index + latestEpisodes.length)}
+                    >
                       <img src="play-green.svg" alt="Tocar episódio" />
                     </button>
                   </td>
@@ -104,44 +120,7 @@ export default function Home({ latestEpisodes, allEpisodes }: HomeProps) {
     </div>
   );
 }
-// SPA
-// modelo de requisição de um SPA, os dados são carregados somente na primeira vez que carrega a tela
-// nesse tipo de requisição, uma vez que o javascript do browser for desabilitado, ele para de funcionar
-// pois ela depende do javascript para funcionar
-// NOTE: usar dentro da function do app
-// useEffect(() => {
-//   fetch('http://localhost:3333/episodes')
-//     .then((response) => response.json())
-//     .then((data) => console.log(data));
-// }, []);
 
-/* SSR
-// modelo de requisição SSR, os dados são carregados todas as vezes que o componente for carregado na tela
-// porém independente do javascript  estar ou não habilitado, pois essa requisição está "cacheada" no servidor next
-
-// NOTE: Só o fato de declarar uma function com esse nome "getServerSideProps" já sinaliza para o app react que será usado SSR
-export async function getServerSideProps() {
-  const response = await fetch('http://localhost:3333/episodes');
-  const data = await response.json();
-
-  return {
-    props: {
-      episodes: data,
-    },
-  };
-}
-*/
-/* SSG
-  modelo de requisição SSG, os dados são carregados uma única vez dentro de um X intervalo de tempo
-  independente também do javascript estar ou não habilitado, pois essa requisição está "cacheada" no servidor next
-  a diferença entre SSR e SSG é que no SSR eu tenho uma requisição sempre que o meu app é acessado, com SSG, eu posso 
-  personalizar quando o app será atualizado com novos dados.
-  Exemplo: nosso podcastr teria um novo podcast por dia, não seria então necessário a cada novo acesso, buscar dados no servidor, 
-  sabendo que os dados vão ser os mesmos durante todo o dia, com isso personalizamos o nosso app para trazer novos dados
-  2 vezes por dia, ou até mesmo 1 vez por dia, otimizando a performance do nosso app.
-  
-  NOTE: Só o fato de declarar uma function com esse nome "getStaticProps" já sinaliza para o app react que será usado SSG
-*/
 export const getStaticProps: GetStaticProps = async () => {
   const { data } = await api.get('episodes', {
     params: {
@@ -151,7 +130,7 @@ export const getStaticProps: GetStaticProps = async () => {
     },
   });
 
-  const episodes = data.map((episode) => {
+  const episodes = data.map(episode => {
     return {
       id: episode.id,
       title: episode.title,
@@ -163,6 +142,7 @@ export const getStaticProps: GetStaticProps = async () => {
       durationAsString: convertDurationToTimeString(Number(episode.file.duration)),
       description: episode.description,
       url: episode.file.url,
+      duration: episode.file.duration,
     };
   });
 
