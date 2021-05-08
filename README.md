@@ -17,11 +17,12 @@
 
 - Como iniciar a aplicação:
   - _yarn install_: instala as dependências contidas no arquivo _package.json_;
+  - _yarn server_: para subir a fake API com ;
   - _yarn dev_: para compilar a aplicação com as **"devDependencies"** do _package.json_;
   - Feito isso abra no browser a url _http://localhost:3000_
 - Para ver o SSG funcionando:
 
-  - Pare a aplicação que está rodando;
+  - Pare a aplicação que está rodando e mantenha a API funcionando;
   - Execute _yarn build_ para fazer o build da aplicação, nesse momento no processo de build é possível ver a seguinte linha aparecer:
     #### ● (SSG) automatically generated as static HTML + JSON (uses getStaticProps);
   - _yarn start_ para iniciar a aplicação;
